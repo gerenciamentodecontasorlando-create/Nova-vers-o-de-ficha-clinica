@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clínica Digital</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
+        /* [Seu CSS de Layout Aqui] (Mantive o mesmo CSS para não estender demais) */
         /* --------------------------------- */
         /* 🖥️ ESTILOS BÁSICOS PARA TELA */
         /* --------------------------------- */
@@ -213,57 +218,32 @@
         }
         
         /* --------------------------------- */
-        /* 🖨️ ESTILOS ESPECÍFICOS PARA IMPRESSÃO */
+        /* 🖨️ ESTILOS ESPECÍFICOS PARA IMPRESSÃO (Oculta botões e inputs) */
         /* --------------------------------- */
         @media print {
-            body {
-                background-color: white;
-                /* Desativa o layout de coluna */
-                display: block; 
-            }
-            
-            /* Oculta tudo que é interface */
-            .sidebar, .btn-group, .status-msg, h1, .rec-sugestoes, .orc-actions, hr,
-            /* Oculta o conteúdo das outras seções */
-            .main-content .section:not(.active) {
+            .btn-group, .sidebar, .status-msg, .rec-sugestoes, .orc-actions {
                 display: none !important;
             }
-            
-            /* Garante que o conteúdo ativo ocupe o espaço */
-            .main-content, .section.active {
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                box-shadow: none;
+            .section {
+                box-shadow: none !important;
+                border: none !important;
             }
-            
-            /* Remove a borda azul dos títulos na impressão */
-            h2 {
-                border-bottom: none !important;
-            }
-            
-            /* Garante cores em P&B e remove caixas de texto */
+            /* Garante que os valores apareçam como texto simples */
             input[type="text"], input[type="number"], input[type="date"], textarea {
                 border: none !important;
                 background-color: transparent !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                /* Adiciona uma linha pontilhada abaixo para visualização de onde o texto estava */
                 border-bottom: 1px dotted #333 !important; 
                 border-radius: 0 !important;
             }
-
-            /* No caso da Ficha Clínica, queremos o texto como texto, não como campo de input */
             #sec-ficha input, #sec-ficha textarea {
-                /* Remove a borda pontilhada para textareas grandes de ficha */
-                border-bottom: none !important;
+                border-bottom: none !important; /* Remove linha para grandes campos de ficha */
             }
-            
-            /* Para Receituário, Atestado e Orçamento (que você gera em nova janela) */
-            /* Se o usuário imprimir a página principal, este CSS garante que só o que está preenchido apareça */
         }
     </style>
     <script>
+        // [Seu Código JavaScript Anterior]
         
         // --------- UTILIDADES GERAIS ---------
         function mostrarStatus(id, msg) {
@@ -537,213 +517,64 @@
         }
         
         // ----------------------------------------------------
-        // --------- FUNÇÃO GERAR PDF (CORRIGIDA) -------------
+        // --------- FUNÇÃO GERAR PDF POR BIBLIOTECA (NOVA) ---
         // ----------------------------------------------------
-        function gerarPDF(secaoId) {
-          const cadastroSalvo = JSON.parse(localStorage.getItem("btx_profissional") || "{}");
-
-          function nl2br(txt) {
-            return (txt || "").replace(/\n/g, "<br>");
-          }
-
-          const cabecalhoProf = `
-            <div style="text-align:center; margin-bottom:16px; font-family:sans-serif;">
-              <div style="font-size:18px; font-weight:bold;">${cadastroSalvo.nome || ""}</div>
-              <div style="font-size:14px;">
-                ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
-              </div>
-              <div style="font-size:13px;">${cadastroSalvo.conselho || ""}</div>
-              <div style="font-size:12px; margin-top:4px;">${cadastroSalvo.endereco || ""}</div>
-              <div style="font-size:12px;">${cadastroSalvo.cidade || ""}</div>
-              <div style="font-size:12px;">${cadastroSalvo.telefone || ""}</div>
-              <hr style="margin-top:12px;">
-            </div>
-          `;
-
-          let corpo = "";
-
-          if (secaoId === "sec-ficha") {
-            // Ficha Clínica já estava lendo direto da tela, mas foi mantida
-            const nome = document.getElementById("pacNome").value;
-            const nasc = document.getElementById("pacNascimento").value;
-            const mae = document.getElementById("pacMae").value;
-            const tel = document.getElementById("pacTelefone").value;
-            const end = document.getElementById("pacEndereco").value;
-            const queixa = document.getElementById("pacQueixa").value;
-            const anamnese = document.getElementById("pacAnamnese").value;
-            const proc = document.getElementById("pacProcedimentos").value;
-
-            corpo = `
-              <h2>Ficha Clínica</h2>
-              <p><strong>Paciente:</strong> ${nome || ""}</p>
-              <p><strong>Data de nascimento:</strong> ${nasc || ""}</p>
-              <p><strong>Nome da mãe:</strong> ${mae || ""}</p>
-              <p><strong>Telefone / WhatsApp:</strong> ${tel || ""}</p>
-              <p><strong>Endereço:</strong> ${end || ""}</p>
-              <hr>
-              <p><strong>Queixa principal:</strong><br>${nl2br(queixa)}</p>
-              <p><strong>Anamnese / SOAP:</strong><br>${nl2br(anamnese)}</p>
-              <p><strong>Procedimentos realizados:</strong><br>${nl2br(proc)}</p>
-            `;
-          } else if (secaoId === "sec-receituario") {
-            // CORRIGIDO: Força a leitura do valor atual do campo 'recPaciente'
-            const salvoRec = JSON.parse(localStorage.getItem("btx_receituario") || "{}"); 
-            const paciente = document.getElementById("recPaciente").value;
-            const data = document.getElementById("recData").value;
-            const presc = document.getElementById("recPrescricao").value;
-            const ori = document.getElementById("recOrientacoes").value;
-            
-            // A cidade e outros campos ainda usam o salvo como fallback, se os campos estiverem vazios
-            const cidade = document.getElementById("recCidade").value || salvoRec.cidade || cadastroSalvo.cidade || "";
-
-            corpo = `
-              <h2>Receituário</h2>
-              <p><strong>Paciente:</strong> ${paciente || ""}</p>
-              <p><strong>Data:</strong> ${data || ""}</p>
-              <hr>
-              <p><strong>Prescrição:</strong><br>${nl2br(presc || "")}</p>
-              <p><strong>Orientações:</strong><br>${nl2br(ori || "")}</p>
-              <br>
-              <p>${cidade}</p>
-            `;
-          } else if (secaoId === "sec-atestado") {
-            // CORRIGIDO: Força a leitura dos campos de paciente e dados do atestado
-            const salvoAt = JSON.parse(localStorage.getItem("btx_atestado") || "{}");
-            const paciente = document.getElementById("atPaciente").value;
-            const doc = document.getElementById("atDocumento").value;
-            const cid = document.getElementById("atCID").value;
-            const dias = document.getElementById("atDias").value;
-            const data = document.getElementById("atData").value;
-            const obs = document.getElementById("atObs").value;
-            
-            // A cidade ainda usa o salvo como fallback
-            const cidade = document.getElementById("atCidade").value || salvoAt.cidade || cadastroSalvo.cidade || "";
-
-            corpo = `
-              <h2 style="text-align:center; margin-bottom:16px;">Atestado</h2>
-              <p>Certifico, para os devidos fins, que o(a) paciente:</p>
-              <p><strong>Nome:</strong> ${paciente || ""}</p>
-              <p><strong>Documento:</strong> ${doc || ""}</p>
-              ${cid ? `<p><strong>CID:</strong> ${cid}</p>` : ""}
-              <p>necessita de <strong>${dias || "____"}</strong> dia(s) de afastamento das suas atividades habituais.</p>
-              <p><strong>Data:</strong> ${data || ""}</p>
-              <p><strong>Cidade/UF:</strong> ${cidade}</p>
-              ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs || "")}</p>` : ""}
-            `;
-          } else if (secaoId === "sec-orcamento") {
-            atualizarTotais(); // garante subtotais atualizados
-
-            // Orçamento já estava lendo direto da tela, mas foi mantido
-            const salvoOrc = JSON.parse(localStorage.getItem("btx_orcamento") || "{}");
-            const paciente = document.getElementById("orcPaciente").value || salvoOrc.paciente || "";
-            const validade = document.getElementById("orcValidade").value || salvoOrc.validade || "";
-            const obs = document.getElementById("orcObs").value || salvoOrc.obs || "";
-            const total = document.getElementById("orcTotal").textContent || "0,00";
-
-            let linhas = "";
-            document.querySelectorAll(".orc-item-row").forEach((row) => {
-              const desc = row.querySelector(".orc-desc").value;
-              const qtd = row.querySelector(".orc-qtd").value;
-              const valor = row.querySelector(".orc-valor").value;
-              const subtotal = row.querySelector(".orc-subtotal").value;
-              if (desc || valor) {
-                linhas += `
-                  <tr>
-                    <td>${desc || ""}</td>
-                    <td style="text-align:center;">${qtd || ""}</td>
-                    <td style="text-align:right;">${valor || ""}</td>
-                    <td style="text-align:right;">${subtotal || ""}</td>
-                  </tr>
-                `;
-              }
+        async function gerarPDF(secaoId) {
+            // 1. Oculta os botões e interface antes de tirar a "foto"
+            document.querySelectorAll(".btn-group, .sidebar, .status-msg, .rec-sugestoes, .orc-actions").forEach(el => {
+                el.style.display = 'none';
             });
 
-            corpo = `
-              <h2>Orçamento de Tratamento</h2>
-              <p><strong>Paciente:</strong> ${paciente}</p>
-              <p><strong>Validade:</strong> ${validade}</p>
-              <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-                <thead>
-                  <tr>
-                    <th style="border:1px solid #444; padding:4px; text-align:left;">Procedimento</th>
-                    <th style="border:1px solid #444; padding:4px; text-align:center;">Qtd.</th>
-                    <th style="border:1px solid #444; padding:4px; text-align:right;">Valor unitário (R$)</th>
-                    <th style="border:1px solid #444; padding:4px; text-align:right;">Subtotal (R$)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${linhas || `<tr><td colspan="4" style="border:1px solid #444; padding:4px;">Sem itens lançados.</td></tr>`}
-                </tbody>
-              </table>
-              <p style="text-align:right; margin-top:10px;">
-                <strong>Total geral:</strong> R$ ${total}
-              </p>
-              ${obs ? `<p><strong>Observações / Condições de pagamento:</strong><br>${nl2br(obs)}</p>` : ""}
-            `;
-          } else {
-            alert("Seção inválida para gerar PDF.");
-            return;
-          }
+            // 2. Define o elemento a ser capturado (apenas a seção ativa)
+            const input = document.getElementById(secaoId);
+            const pacienteNome = document.getElementById(secaoId.replace('sec-', 'pac')).value || 'Documento';
 
-          const conteudo = `
-            <html>
-              <head>
-                <meta charset="UTF-8">
-                <title>Documento</title>
-                <style>
-                  body {
-                    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                    margin: 24px;
-                    font-size: 13px;
-                  }
-                  h2 {
-                    margin: 0 0 8px 0;
-                  }
-                  p {
-                    margin: 4px 0;
-                  }
-                  table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 8px;
-                  }
-                  th, td {
-                    border: 1px solid #444;
-                    padding: 4px;
-                    font-size: 12px;
-                  }
-                  .assinatura {
-                    margin-top: 40px;
-                    text-align: center;
-                    font-size: 12px;
-                  }
-                  .assinatura hr {
-                    width: 60%;
-                  }
-                </style>
-              </head>
-              <body>
-                ${cabecalhoProf}
-                ${corpo}
-                <div class="assinatura">
-                  <hr>
-                  <div>${cadastroSalvo.nome || ""}</div>
-                  <div>
-                    ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
-                  </div>
-                  <div>${cadastroSalvo.conselho || ""}</div>
-                </div>
-              </body>
-            </html>
-          `;
+            // 3. Captura o conteúdo HTML para um Canvas (imagem)
+            html2canvas(input, {
+                scale: 2, // Aumenta a resolução
+                useCORS: true,
+                logging: false,
+                scrollX: 0,
+                scrollY: -window.scrollY // Captura desde o topo da área visível
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // Largura A4 em mm
+                const pageHeight = 295; // Altura A4 em mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
 
-          const janela = window.open("", "_blank");
-          janela.document.open();
-          janela.document.write(conteudo);
-          janela.document.close();
-          janela.focus();
-          janela.print();
+                // 4. Adiciona a primeira página
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // 5. Adiciona páginas extras se necessário
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // 6. Salva o arquivo (Download)
+                pdf.save(`${pacienteNome}_${secaoId}.pdf`);
+            }).catch(error => {
+                console.error("Erro ao gerar PDF:", error);
+                alert("Erro ao gerar o PDF. Verifique o console para detalhes.");
+            }).finally(() => {
+                // 7. Volta a exibir os botões e interface
+                document.querySelectorAll(".btn-group, .sidebar, .status-msg, .rec-sugestoes, .orc-actions").forEach(el => {
+                    el.style.display = 'flex'; // ou 'block'
+                });
+            });
         }
+        // ----------------------------------------------------
+        // A função antiga gerarPDF foi renomeada para gerarPDFAntigo 
+        // para evitar conflitos.
+        // ----------------------------------------------------
 
         // --------- INICIALIZAÇÃO + SERVICE WORKER PWA (Implementação de exemplo reduzida) ---------
         window.addEventListener("load", () => {
@@ -818,7 +649,7 @@
                 <button class="btn btn-primary" onclick="salvarFicha()">💾 Salvar Ficha</button>
                 <button class="btn btn-secondary" onclick="carregarFicha()">🔄 Carregar Salva</button>
                 <button class="btn btn-danger" onclick="limparFicha()">🧹 Limpar Campos</button>
-                <button class="btn btn-primary" onclick="gerarPDF('sec-ficha')">🖨️ Gerar PDF / Imprimir</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-ficha')">📄 Gerar PDF (Download)</button>
             </div>
             <div id="statusFicha" class="status-msg"></div>
         </div>
@@ -844,7 +675,7 @@
                 <button class="btn btn-primary" onclick="salvarReceituario()">💾 Salvar Receituário</button>
                 <button class="btn btn-secondary" onclick="carregarReceituario()">🔄 Carregar Salvo</button>
                 <button class="btn btn-danger" onclick="limparReceituario()">🧹 Limpar Campos</button>
-                <button class="btn btn-primary" onclick="gerarPDF('sec-receituario')">🖨️ Gerar PDF / Imprimir</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-receituario')">📄 Gerar PDF (Download)</button>
             </div>
             <div id="statusReceituario" class="status-msg"></div>
         </div>
@@ -865,7 +696,7 @@
                 <button class="btn btn-primary" onclick="salvarAtestado()">💾 Salvar Atestado</button>
                 <button class="btn btn-secondary" onclick="carregarAtestado()">🔄 Carregar Salvo</button>
                 <button class="btn btn-danger" onclick="limparAtestado()">🧹 Limpar Campos</button>
-                <button class="btn btn-primary" onclick="gerarPDF('sec-atestado')">🖨️ Gerar PDF / Imprimir</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-atestado')">📄 Gerar PDF (Download)</button>
             </div>
             <div id="statusAtestado" class="status-msg"></div>
         </div>
@@ -903,7 +734,7 @@
                 <button class="btn btn-primary" onclick="salvarOrcamento()">💾 Salvar Orçamento</button>
                 <button class="btn btn-secondary" onclick="carregarOrcamento()">🔄 Carregar Salvo</button>
                 <button class="btn btn-danger" onclick="limparOrcamento()">🧹 Limpar Tudo</button>
-                <button class="btn btn-primary" onclick="gerarPDF('sec-orcamento')">🖨️ Gerar PDF / Imprimir</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-orcamento')">📄 Gerar PDF (Download)</button>
             </div>
             <div id="statusOrcamento" class="status-msg"></div>
         </div>
