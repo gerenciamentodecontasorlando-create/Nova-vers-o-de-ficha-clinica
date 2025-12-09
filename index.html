@@ -1,495 +1,908 @@
-<script>
-// --------- UTILIDADES GERAIS ---------
-function mostrarStatus(id, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = msg;
-  if (!msg) return;
-  setTimeout(() => {
-    el.textContent = "";
-  }, 2500);
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Digital</title>
+    <style>
+        /* --------------------------------- */
+        /* 🖥️ ESTILOS BÁSICOS PARA TELA */
+        /* --------------------------------- */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            min-height: 100vh;
+        }
 
-function trocarSecao(idSecao, botao) {
-  document.querySelectorAll(".section").forEach(sec => {
-    sec.classList.remove("active");
-  });
-  document.getElementById(idSecao).classList.add("active");
+        .sidebar {
+            width: 200px;
+            background-color: #2c3e50;
+            padding-top: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
 
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.classList.remove("active");
-  });
-  if (botao) botao.classList.add("active");
-}
+        .tab-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            text-align: left;
+            border: none;
+            background: none;
+            color: #ecf0f1;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
 
-// --------- CADASTRO ---------
-function salvarCadastro() {
-  const dados = {
-    nome: document.getElementById("profNome").value || "",
-    profissao: document.getElementById("profProfissao").value || "",
-    especialidade: document.getElementById("profEspecialidade").value || "",
-    conselho: document.getElementById("profConselho").value || "",
-    telefone: document.getElementById("profTelefone").value || "",
-    endereco: document.getElementById("profEndereco").value || "",
-    cidade: document.getElementById("profCidade").value || "",
-    login: document.getElementById("profLogin").value || "",
-    senha: document.getElementById("profSenha").value || ""
-  };
-  localStorage.setItem("btx_profissional", JSON.stringify(dados));
-  mostrarStatus("statusCadastro", "Cadastro salvo com sucesso.");
-}
+        .tab-btn:hover {
+            background-color: #34495e;
+        }
 
-function carregarCadastro() {
-  const salvo = localStorage.getItem("btx_profissional");
-  if (!salvo) return;
-  try {
-    const d = JSON.parse(salvo);
-    document.getElementById("profNome").value = d.nome || "";
-    document.getElementById("profProfissao").value = d.profissao || "";
-    document.getElementById("profEspecialidade").value = d.especialidade || "";
-    document.getElementById("profConselho").value = d.conselho || "";
-    document.getElementById("profTelefone").value = d.telefone || "";
-    document.getElementById("profEndereco").value = d.endereco || "";
-    document.getElementById("profCidade").value = d.cidade || "";
-    document.getElementById("profLogin").value = d.login || "";
-    document.getElementById("profSenha").value = d.senha || "";
-  } catch (e) {
-    console.error(e);
-  }
-}
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
 
-function limparCadastro() {
-  ["profNome","profProfissao","profEspecialidade","profConselho",
-    "profTelefone","profEndereco","profCidade","profLogin","profSenha"
-  ].forEach(id => document.getElementById(id).value = "");
-  mostrarStatus("statusCadastro", "Cadastro limpo (não esqueça de salvar novamente).");
-}
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
 
-// --------- FICHA CLÍNICA ---------
-function salvarFicha() {
-  const f = {
-    nome: document.getElementById("pacNome").value || "",
-    nasc: document.getElementById("pacNascimento").value || "",
-    mae: document.getElementById("pacMae").value || "",
-    tel: document.getElementById("pacTelefone").value || "",
-    end: document.getElementById("pacEndereco").value || "",
-    queixa: document.getElementById("pacQueixa").value || "",
-    anamnese: document.getElementById("pacAnamnese").value || "",
-    procedimentos: document.getElementById("pacProcedimentos").value || ""
-  };
-  localStorage.setItem("btx_ficha", JSON.stringify(f));
-  mostrarStatus("statusFicha", "Ficha clínica salva.");
-}
+        .section {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
 
-function carregarFicha() {
-  const salvo = localStorage.getItem("btx_ficha");
-  if (!salvo) return;
-  try {
-    const f = JSON.parse(salvo);
-    document.getElementById("pacNome").value = f.nome || "";
-    document.getElementById("pacNascimento").value = f.nasc || "";
-    document.getElementById("pacMae").value = f.mae || "";
-    document.getElementById("pacTelefone").value = f.tel || "";
-    document.getElementById("pacEndereco").value = f.end || "";
-    document.getElementById("pacQueixa").value = f.queixa || "";
-    document.getElementById("pacAnamnese").value = f.anamnese || "";
-    document.getElementById("pacProcedimentos").value = f.procedimentos || "";
-  } catch (e) {
-    console.error(e);
-  }
-}
+        .section.active {
+            display: block;
+        }
 
-function limparFicha() {
-  ["pacNome","pacNascimento","pacMae","pacTelefone","pacEndereco",
-    "pacQueixa","pacAnamnese","pacProcedimentos"
-  ].forEach(id => document.getElementById(id).value = "");
-  mostrarStatus("statusFicha", "Ficha clínica limpa.");
-}
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
 
-// --------- RECEITUÁRIO ---------
-function addMedicamento(txt) {
-  const campo = document.getElementById("recPrescricao");
-  if (!campo.value) {
-    campo.value = txt + " – ";
-  } else {
-    campo.value += "\n" + txt + " – ";
-  }
-  campo.focus();
-}
+        .form-group {
+            margin-bottom: 15px;
+        }
 
-function salvarReceituario() {
-  const r = {
-    paciente: document.getElementById("recPaciente").value || "",
-    data: document.getElementById("recData").value || "",
-    prescricao: document.getElementById("recPrescricao").value || "",
-    orientacoes: document.getElementById("recOrientacoes").value || "",
-    cidade: document.getElementById("recCidade").value || ""
-  };
-  localStorage.setItem("btx_receituario", JSON.stringify(r));
-  mostrarStatus("statusReceituario", "Receituário salvo.");
-}
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
 
-function carregarReceituario() {
-  const salvo = localStorage.getItem("btx_receituario");
-  if (!salvo) return;
-  try {
-    const r = JSON.parse(salvo);
-    document.getElementById("recPaciente").value = r.paciente || "";
-    document.getElementById("recData").value = r.data || "";
-    document.getElementById("recPrescricao").value = r.prescricao || "";
-    document.getElementById("recOrientacoes").value = r.orientacoes || "";
-    document.getElementById("recCidade").value = r.cidade || "";
-  } catch (e) {
-    console.error(e);
-  }
-}
+        input[type="text"], input[type="number"], input[type="date"], input[type="password"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
 
-function limparReceituario() {
-  ["recPaciente","recData","recPrescricao","recOrientacoes","recCidade"]
-    .forEach(id => document.getElementById(id).value = "");
-  mostrarStatus("statusReceituario", "Receituário limpo.");
-}
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
 
-// --------- ATESTADO ---------
-function salvarAtestado() {
-  const a = {
-    paciente: document.getElementById("atPaciente").value || "",
-    doc: document.getElementById("atDocumento").value || "",
-    cid: document.getElementById("atCID").value || "",
-    dias: document.getElementById("atDias").value || "",
-    data: document.getElementById("atData").value || "",
-    cidade: document.getElementById("atCidade").value || "",
-    obs: document.getElementById("atObs").value || ""
-  };
-  localStorage.setItem("btx_atestado", JSON.stringify(a));
-  mostrarStatus("statusAtestado", "Atestado salvo.");
-}
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
 
-function carregarAtestado() {
-  const salvo = localStorage.getItem("btx_atestado");
-  if (!salvo) return;
-  try {
-    const a = JSON.parse(salvo);
-    document.getElementById("atPaciente").value = a.paciente || "";
-    document.getElementById("atDocumento").value = a.doc || "";
-    document.getElementById("atCID").value = a.cid || "";
-    document.getElementById("atDias").value = a.dias || "";
-    document.getElementById("atData").value = a.data || "";
-    document.getElementById("atCidade").value = a.cidade || "";
-    document.getElementById("atObs").value = a.obs || "";
-  } catch (e) {
-    console.error(e);
-  }
-}
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
 
-function limparAtestado() {
-  ["atPaciente","atDocumento","atCID","atDias","atData","atCidade","atObs"]
-    .forEach(id => document.getElementById(id).value = "");
-  mostrarStatus("statusAtestado", "Atestado limpo.");
-}
+        .btn-primary {
+            background-color: #2ecc71;
+            color: white;
+        }
 
-// --------- ORÇAMENTO ---------
-function adicionarItemOrcamento(item = {}) {
-  const corpo = document.getElementById("orcCorpo");
-  const tr = document.createElement("tr");
-  tr.className = "orc-item-row";
+        .btn-primary:hover {
+            background-color: #27ae60;
+        }
 
-  tr.innerHTML = `
-    <td><input type="text" class="orc-desc" placeholder="Procedimento" value="${item.desc || ""}"></td>
-    <td><input type="number" class="orc-qtd" min="1" value="${item.qtd || 1}"></td>
-    <td><input type="number" class="orc-valor" min="0" step="0.01" value="${item.valor || ""}"></td>
-    <td><input type="text" class="orc-subtotal" readonly></td>
-  `;
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
 
-  corpo.appendChild(tr);
-  tr.querySelectorAll(".orc-qtd, .orc-valor").forEach(inp => {
-    inp.addEventListener("input", atualizarTotais);
-  });
-  atualizarTotais();
-}
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
 
-function atualizarTotais() {
-  let total = 0;
-  document.querySelectorAll(".orc-item-row").forEach(row => {
-    const qtd = parseFloat((row.querySelector(".orc-qtd").value || "0").replace(",", ".")) || 0;
-    const valor = parseFloat((row.querySelector(".orc-valor").value || "0").replace(",", ".")) || 0;
-    const subtotal = qtd * valor;
-    row.querySelector(".orc-subtotal").value = subtotal.toFixed(2).replace(".", ",");
-    total += subtotal;
-  });
-  document.getElementById("orcTotal").textContent = total.toFixed(2).replace(".", ",");
-}
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
 
-function salvarOrcamento() {
-  const dados = {
-    paciente: document.getElementById("orcPaciente").value || "",
-    validade: document.getElementById("orcValidade").value || "",
-    obs: document.getElementById("orcObs").value || "",
-    itens: []
-  };
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
 
-  document.querySelectorAll(".orc-item-row").forEach(row => {
-    const desc = row.querySelector(".orc-desc").value || "";
-    const qtd = row.querySelector(".orc-qtd").value || "";
-    const valor = row.querySelector(".orc-valor").value || "";
-    if (desc || valor) {
-      dados.itens.push({ desc, qtd, valor });
-    }
-  });
+        .status-msg {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2ecc71;
+        }
 
-  localStorage.setItem("btx_orcamento", JSON.stringify(dados));
-  mostrarStatus("statusOrcamento", "Orçamento salvo.");
-}
-
-function carregarOrcamento() {
-  const salvo = localStorage.getItem("btx_orcamento");
-  if (!salvo) {
-    adicionarItemOrcamento();
-    return;
-  }
-  try {
-    const d = JSON.parse(salvo);
-    document.getElementById("orcPaciente").value = d.paciente || "";
-    document.getElementById("orcValidade").value = d.validade || "";
-    document.getElementById("orcObs").value = d.obs || "";
-    document.getElementById("orcCorpo").innerHTML = "";
-    if (d.itens && d.itens.length) {
-      d.itens.forEach(it => adicionarItemOrcamento(it));
-    } else {
-      adicionarItemOrcamento();
-    }
-    atualizarTotais();
-  } catch (e) {
-    console.error(e);
-    adicionarItemOrcamento();
-  }
-}
-
-function limparItensOrcamento() {
-  document.getElementById("orcCorpo").innerHTML = "";
-  adicionarItemOrcamento();
-  atualizarTotais();
-}
-
-function limparOrcamento() {
-  document.getElementById("orcPaciente").value = "";
-  document.getElementById("orcValidade").value = "";
-  document.getElementById("orcObs").value = "";
-  limparItensOrcamento();
-  mostrarStatus("statusOrcamento", "Orçamento limpo.");
-}
-
-// --------- GERAR PDF (AGORA LEVA OS VALORES) ---------
-function gerarPDF(secaoId) {
-  const cadastroSalvo = JSON.parse(localStorage.getItem("btx_profissional") || "{}");
-
-  function nl2br(txt) {
-    return (txt || "").replace(/\n/g, "<br>");
-  }
-
-  const cabecalhoProf = `
-    <div style="text-align:center; margin-bottom:16px; font-family:sans-serif;">
-      <div style="font-size:18px; font-weight:bold;">${cadastroSalvo.nome || ""}</div>
-      <div style="font-size:14px;">
-        ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
-      </div>
-      <div style="font-size:13px;">${cadastroSalvo.conselho || ""}</div>
-      <div style="font-size:12px; margin-top:4px;">${cadastroSalvo.endereco || ""}</div>
-      <div style="font-size:12px;">${cadastroSalvo.cidade || ""}</div>
-      <div style="font-size:12px;">${cadastroSalvo.telefone || ""}</div>
-      <hr style="margin-top:12px;">
-    </div>
-  `;
-
-  let corpo = "";
-
-  if (secaoId === "sec-ficha") {
-    const nome = document.getElementById("pacNome").value;
-    const nasc = document.getElementById("pacNascimento").value;
-    const mae = document.getElementById("pacMae").value;
-    const tel = document.getElementById("pacTelefone").value;
-    const end = document.getElementById("pacEndereco").value;
-    const queixa = document.getElementById("pacQueixa").value;
-    const anamnese = document.getElementById("pacAnamnese").value;
-    const proc = document.getElementById("pacProcedimentos").value;
-
-    corpo = `
-      <h2>Ficha Clínica</h2>
-      <p><strong>Paciente:</strong> ${nome || ""}</p>
-      <p><strong>Data de nascimento:</strong> ${nasc || ""}</p>
-      <p><strong>Nome da mãe:</strong> ${mae || ""}</p>
-      <p><strong>Telefone / WhatsApp:</strong> ${tel || ""}</p>
-      <p><strong>Endereço:</strong> ${end || ""}</p>
-      <hr>
-      <p><strong>Queixa principal:</strong><br>${nl2br(queixa)}</p>
-      <p><strong>Anamnese / SOAP:</strong><br>${nl2br(anamnese)}</p>
-      <p><strong>Procedimentos realizados:</strong><br>${nl2br(proc)}</p>
-    `;
-  } else if (secaoId === "sec-receituario") {
-    const salvoRec = JSON.parse(localStorage.getItem("btx_receituario") || "{}");
-    const paciente = document.getElementById("recPaciente").value || salvoRec.paciente || "";
-    const data = document.getElementById("recData").value || salvoRec.data || "";
-    const presc = document.getElementById("recPrescricao").value || salvoRec.prescricao || "";
-    const ori = document.getElementById("recOrientacoes").value || salvoRec.orientacoes || "";
-    const cidade = document.getElementById("recCidade").value || salvoRec.cidade || cadastroSalvo.cidade || "";
-
-    corpo = `
-      <h2>Receituário</h2>
-      <p><strong>Paciente:</strong> ${paciente}</p>
-      <p><strong>Data:</strong> ${data}</p>
-      <hr>
-      <p><strong>Prescrição:</strong><br>${nl2br(presc)}</p>
-      <p><strong>Orientações:</strong><br>${nl2br(ori)}</p>
-      <br>
-      <p>${cidade}</p>
-    `;
-  } else if (secaoId === "sec-atestado") {
-    const salvoAt = JSON.parse(localStorage.getItem("btx_atestado") || "{}");
-    const paciente = document.getElementById("atPaciente").value || salvoAt.paciente || "";
-    const doc = document.getElementById("atDocumento").value || salvoAt.doc || "";
-    const cid = document.getElementById("atCID").value || salvoAt.cid || "";
-    const dias = document.getElementById("atDias").value || salvoAt.dias || "";
-    const data = document.getElementById("atData").value || salvoAt.data || "";
-    const cidade = document.getElementById("atCidade").value || salvoAt.cidade || cadastroSalvo.cidade || "";
-    const obs = document.getElementById("atObs").value || salvoAt.obs || "";
-
-    corpo = `
-      <h2 style="text-align:center; margin-bottom:16px;">Atestado</h2>
-      <p>Certifico, para os devidos fins, que o(a) paciente:</p>
-      <p><strong>Nome:</strong> ${paciente}</p>
-      <p><strong>Documento:</strong> ${doc}</p>
-      ${cid ? `<p><strong>CID:</strong> ${cid}</p>` : ""}
-      <p>necessita de <strong>${dias || "____"}</strong> dia(s) de afastamento das suas atividades habituais.</p>
-      <p><strong>Data:</strong> ${data}</p>
-      <p><strong>Cidade/UF:</strong> ${cidade}</p>
-      ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs)}</p>` : ""}
-    `;
-  } else if (secaoId === "sec-orcamento") {
-    atualizarTotais(); // garante subtotais atualizados
-
-    const salvoOrc = JSON.parse(localStorage.getItem("btx_orcamento") || "{}");
-    const paciente = document.getElementById("orcPaciente").value || salvoOrc.paciente || "";
-    const validade = document.getElementById("orcValidade").value || salvoOrc.validade || "";
-    const obs = document.getElementById("orcObs").value || salvoOrc.obs || "";
-    const total = document.getElementById("orcTotal").textContent || "0,00";
-
-    let linhas = "";
-    document.querySelectorAll(".orc-item-row").forEach((row) => {
-      const desc = row.querySelector(".orc-desc").value;
-      const qtd = row.querySelector(".orc-qtd").value;
-      const valor = row.querySelector(".orc-valor").value;
-      const subtotal = row.querySelector(".orc-subtotal").value;
-      if (desc || valor) {
-        linhas += `
-          <tr>
-            <td>${desc || ""}</td>
-            <td style="text-align:center;">${qtd || ""}</td>
-            <td style="text-align:right;">${valor || ""}</td>
-            <td style="text-align:right;">${subtotal || ""}</td>
-          </tr>
-        `;
-      }
-    });
-
-    corpo = `
-      <h2>Orçamento de Tratamento</h2>
-      <p><strong>Paciente:</strong> ${paciente}</p>
-      <p><strong>Validade:</strong> ${validade}</p>
-      <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-        <thead>
-          <tr>
-            <th style="border:1px solid #444; padding:4px; text-align:left;">Procedimento</th>
-            <th style="border:1px solid #444; padding:4px; text-align:center;">Qtd.</th>
-            <th style="border:1px solid #444; padding:4px; text-align:right;">Valor unitário (R$)</th>
-            <th style="border:1px solid #444; padding:4px; text-align:right;">Subtotal (R$)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${linhas || `<tr><td colspan="4" style="border:1px solid #444; padding:4px;">Sem itens lançados.</td></tr>`}
-        </tbody>
-      </table>
-      <p style="text-align:right; margin-top:10px;">
-        <strong>Total geral:</strong> R$ ${total}
-      </p>
-      ${obs ? `<p><strong>Observações / Condições de pagamento:</strong><br>${nl2br(obs)}</p>` : ""}
-    `;
-  } else {
-    alert("Seção inválida para gerar PDF.");
-    return;
-  }
-
-  const conteudo = `
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Documento</title>
-        <style>
-          body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            margin: 24px;
-            font-size: 13px;
-          }
-          h2 {
-            margin: 0 0 8px 0;
-          }
-          p {
-            margin: 4px 0;
-          }
-          table {
+        /* Orçamento */
+        .orc-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
-          }
-          th, td {
-            border: 1px solid #444;
-            padding: 4px;
-            font-size: 12px;
-          }
-          .assinatura {
-            margin-top: 40px;
+            margin-bottom: 15px;
+        }
+
+        .orc-table th, .orc-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .orc-table th {
+            background-color: #f2f2f2;
+        }
+
+        .orc-table input {
+            border: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            background: transparent;
+        }
+        
+        .orc-valor, .orc-subtotal {
+            text-align: right;
+        }
+        
+        .orc-qtd {
+            width: 50px;
             text-align: center;
+        }
+        
+        .orc-item-row .orc-subtotal {
+            background-color: #ecf0f1;
+        }
+        
+        .total-box {
+            text-align: right;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-right: 10px;
+        }
+        
+        /* Receituário - Botões de Sugestão */
+        .rec-sugestoes {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .rec-sugestoes button {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 5px;
             font-size: 12px;
+        }
+        
+        /* --------------------------------- */
+        /* 🖨️ ESTILOS ESPECÍFICOS PARA IMPRESSÃO */
+        /* --------------------------------- */
+        @media print {
+            body {
+                background-color: white;
+                /* Desativa o layout de coluna */
+                display: block; 
+            }
+            
+            /* Oculta tudo que é interface */
+            .sidebar, .btn-group, .status-msg, h1, .rec-sugestoes, .orc-actions, hr,
+            /* Oculta o conteúdo das outras seções */
+            .main-content .section:not(.active) {
+                display: none !important;
+            }
+            
+            /* Garante que o conteúdo ativo ocupe o espaço */
+            .main-content, .section.active {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            
+            /* Remove a borda azul dos títulos na impressão */
+            h2 {
+                border-bottom: none !important;
+            }
+            
+            /* Garante cores em P&B e remove caixas de texto */
+            input[type="text"], input[type="number"], input[type="date"], textarea {
+                border: none !important;
+                background-color: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                /* Adiciona uma linha pontilhada abaixo para visualização de onde o texto estava */
+                border-bottom: 1px dotted #333 !important; 
+                border-radius: 0 !important;
+            }
+
+            /* No caso da Ficha Clínica, queremos o texto como texto, não como campo de input */
+            #sec-ficha input, #sec-ficha textarea {
+                /* Remove a borda pontilhada para textareas grandes de ficha */
+                border-bottom: none !important;
+            }
+            
+            /* Para Receituário, Atestado e Orçamento (que você gera em nova janela) */
+            /* Se o usuário imprimir a página principal, este CSS garante que só o que está preenchido apareça */
+        }
+    </style>
+    <script>
+        // O CÓDIGO JAVASCRIPT QUE VOCÊ ME ENVIOU DEVE SER INSERIDO AQUI
+        // (Para simplificar, não o repeti, mas ele deve estar aqui)
+        
+        // --------- UTILIDADES GERAIS ---------
+        function mostrarStatus(id, msg) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = msg;
+          if (!msg) return;
+          setTimeout(() => {
+            el.textContent = "";
+          }, 2500);
+        }
+
+        function trocarSecao(idSecao, botao) {
+          document.querySelectorAll(".section").forEach(sec => {
+            sec.classList.remove("active");
+          });
+          document.getElementById(idSecao).classList.add("active");
+
+          document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.classList.remove("active");
+          });
+          if (botao) botao.classList.add("active");
+        }
+
+        // --------- CADASTRO (Implementação de exemplo reduzida) ---------
+        function salvarCadastro() {
+             const dados = {
+                nome: document.getElementById("profNome").value || "",
+                profissao: document.getElementById("profProfissao").value || "",
+                especialidade: document.getElementById("profEspecialidade").value || "",
+                conselho: document.getElementById("profConselho").value || "",
+                telefone: document.getElementById("profTelefone").value || "",
+                endereco: document.getElementById("profEndereco").value || "",
+                cidade: document.getElementById("profCidade").value || "",
+                login: document.getElementById("profLogin").value || "",
+                senha: document.getElementById("profSenha").value || ""
+            };
+            localStorage.setItem("btx_profissional", JSON.stringify(dados));
+            mostrarStatus("statusCadastro", "Cadastro salvo com sucesso.");
+        }
+        function carregarCadastro() {
+             const salvo = localStorage.getItem("btx_profissional");
+            if (!salvo) return;
+            try {
+                const d = JSON.parse(salvo);
+                document.getElementById("profNome").value = d.nome || "";
+                document.getElementById("profProfissao").value = d.profissao || "";
+                document.getElementById("profEspecialidade").value = d.especialidade || "";
+                document.getElementById("profConselho").value = d.conselho || "";
+                document.getElementById("profTelefone").value = d.telefone || "";
+                document.getElementById("profEndereco").value = d.endereco || "";
+                document.getElementById("profCidade").value = d.cidade || "";
+                document.getElementById("profLogin").value = d.login || "";
+                document.getElementById("profSenha").value = d.senha || "";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        function limparCadastro() {
+              ["profNome","profProfissao","profEspecialidade","profConselho",
+                "profTelefone","profEndereco","profCidade","profLogin","profSenha"
+              ].forEach(id => document.getElementById(id).value = "");
+              mostrarStatus("statusCadastro", "Cadastro limpo (não esqueça de salvar novamente).");
+        }
+        
+        // --------- FICHA CLÍNICA (Implementação de exemplo reduzida) ---------
+        function salvarFicha() {
+             const f = {
+                nome: document.getElementById("pacNome").value || "",
+                nasc: document.getElementById("pacNascimento").value || "",
+                mae: document.getElementById("pacMae").value || "",
+                tel: document.getElementById("pacTelefone").value || "",
+                end: document.getElementById("pacEndereco").value || "",
+                queixa: document.getElementById("pacQueixa").value || "",
+                anamnese: document.getElementById("pacAnamnese").value || "",
+                procedimentos: document.getElementById("pacProcedimentos").value || ""
+            };
+            localStorage.setItem("btx_ficha", JSON.stringify(f));
+            mostrarStatus("statusFicha", "Ficha clínica salva.");
+        }
+        function carregarFicha() {
+             const salvo = localStorage.getItem("btx_ficha");
+            if (!salvo) return;
+            try {
+                const f = JSON.parse(salvo);
+                document.getElementById("pacNome").value = f.nome || "";
+                document.getElementById("pacNascimento").value = f.nasc || "";
+                document.getElementById("pacMae").value = f.mae || "";
+                document.getElementById("pacTelefone").value = f.tel || "";
+                document.getElementById("pacEndereco").value = f.end || "";
+                document.getElementById("pacQueixa").value = f.queixa || "";
+                document.getElementById("pacAnamnese").value = f.anamnese || "";
+                document.getElementById("pacProcedimentos").value = f.procedimentos || "";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        function limparFicha() {
+            ["pacNome","pacNascimento","pacMae","pacTelefone","pacEndereco",
+                "pacQueixa","pacAnamnese","pacProcedimentos"
+              ].forEach(id => document.getElementById(id).value = "");
+              mostrarStatus("statusFicha", "Ficha clínica limpa.");
+        }
+        
+        // --------- RECEITUÁRIO (Implementação de exemplo reduzida) ---------
+        function addMedicamento(txt) {
+            const campo = document.getElementById("recPrescricao");
+            if (!campo.value) {
+                campo.value = txt + " – ";
+            } else {
+                campo.value += "\n" + txt + " – ";
+            }
+            campo.focus();
+        }
+        function salvarReceituario() {
+             const r = {
+                paciente: document.getElementById("recPaciente").value || "",
+                data: document.getElementById("recData").value || "",
+                prescricao: document.getElementById("recPrescricao").value || "",
+                orientacoes: document.getElementById("recOrientacoes").value || "",
+                cidade: document.getElementById("recCidade").value || ""
+            };
+            localStorage.setItem("btx_receituario", JSON.stringify(r));
+            mostrarStatus("statusReceituario", "Receituário salvo.");
+        }
+        function carregarReceituario() {
+             const salvo = localStorage.getItem("btx_receituario");
+            if (!salvo) return;
+            try {
+                const r = JSON.parse(salvo);
+                document.getElementById("recPaciente").value = r.paciente || "";
+                document.getElementById("recData").value = r.data || "";
+                document.getElementById("recPrescricao").value = r.prescricao || "";
+                document.getElementById("recOrientacoes").value = r.orientacoes || "";
+                document.getElementById("recCidade").value = r.cidade || "";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        function limparReceituario() {
+            ["recPaciente","recData","recPrescricao","recOrientacoes","recCidade"]
+                .forEach(id => document.getElementById(id).value = "");
+              mostrarStatus("statusReceituario", "Receituário limpo.");
+        }
+        
+        // --------- ATESTADO (Implementação de exemplo reduzida) ---------
+        function salvarAtestado() {
+             const a = {
+                paciente: document.getElementById("atPaciente").value || "",
+                doc: document.getElementById("atDocumento").value || "",
+                cid: document.getElementById("atCID").value || "",
+                dias: document.getElementById("atDias").value || "",
+                data: document.getElementById("atData").value || "",
+                cidade: document.getElementById("atCidade").value || "",
+                obs: document.getElementById("atObs").value || ""
+            };
+            localStorage.setItem("btx_atestado", JSON.stringify(a));
+            mostrarStatus("statusAtestado", "Atestado salvo.");
+        }
+        function carregarAtestado() {
+             const salvo = localStorage.getItem("btx_atestado");
+            if (!salvo) return;
+            try {
+                const a = JSON.parse(salvo);
+                document.getElementById("atPaciente").value = a.paciente || "";
+                document.getElementById("atDocumento").value = a.doc || "";
+                document.getElementById("atCID").value = a.cid || "";
+                document.getElementById("atDias").value = a.dias || "";
+                document.getElementById("atData").value = a.data || "";
+                document.getElementById("atCidade").value = a.cidade || "";
+                document.getElementById("atObs").value = a.obs || "";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        function limparAtestado() {
+            ["atPaciente","atDocumento","atCID","atDias","atData","atCidade","atObs"]
+                .forEach(id => document.getElementById(id).value = "");
+              mostrarStatus("statusAtestado", "Atestado limpo.");
+        }
+        
+        // --------- ORÇAMENTO (Implementação de exemplo reduzida) ---------
+        function adicionarItemOrcamento(item = {}) {
+          const corpo = document.getElementById("orcCorpo");
+          const tr = document.createElement("tr");
+          tr.className = "orc-item-row";
+
+          tr.innerHTML = `
+            <td><input type="text" class="orc-desc" placeholder="Procedimento" value="${item.desc || ""}"></td>
+            <td><input type="number" class="orc-qtd" min="1" value="${item.qtd || 1}"></td>
+            <td><input type="number" class="orc-valor" min="0" step="0.01" value="${item.valor || ""}"></td>
+            <td><input type="text" class="orc-subtotal" readonly></td>
+          `;
+
+          corpo.appendChild(tr);
+          tr.querySelectorAll(".orc-qtd, .orc-valor").forEach(inp => {
+            inp.addEventListener("input", atualizarTotais);
+          });
+          atualizarTotais();
+        }
+
+        function atualizarTotais() {
+          let total = 0;
+          document.querySelectorAll(".orc-item-row").forEach(row => {
+            const qtd = parseFloat((row.querySelector(".orc-qtd").value || "0").replace(",", ".")) || 0;
+            const valor = parseFloat((row.querySelector(".orc-valor").value || "0").replace(",", ".")) || 0;
+            const subtotal = qtd * valor;
+            row.querySelector(".orc-subtotal").value = subtotal.toFixed(2).replace(".", ",");
+            total += subtotal;
+          });
+          document.getElementById("orcTotal").textContent = total.toFixed(2).replace(".", ",");
+        }
+
+        function salvarOrcamento() {
+          const dados = {
+            paciente: document.getElementById("orcPaciente").value || "",
+            validade: document.getElementById("orcValidade").value || "",
+            obs: document.getElementById("orcObs").value || "",
+            itens: []
+          };
+
+          document.querySelectorAll(".orc-item-row").forEach(row => {
+            const desc = row.querySelector(".orc-desc").value || "";
+            const qtd = row.querySelector(".orc-qtd").value || "";
+            const valor = row.querySelector(".orc-valor").value || "";
+            if (desc || valor) {
+              dados.itens.push({ desc, qtd, valor });
+            }
+          });
+
+          localStorage.setItem("btx_orcamento", JSON.stringify(dados));
+          mostrarStatus("statusOrcamento", "Orçamento salvo.");
+        }
+
+        function carregarOrcamento() {
+          const salvo = localStorage.getItem("btx_orcamento");
+          if (!salvo) {
+            adicionarItemOrcamento();
+            return;
           }
-          .assinatura hr {
-            width: 60%;
+          try {
+            const d = JSON.parse(salvo);
+            document.getElementById("orcPaciente").value = d.paciente || "";
+            document.getElementById("orcValidade").value = d.validade || "";
+            document.getElementById("orcObs").value = d.obs || "";
+            document.getElementById("orcCorpo").innerHTML = "";
+            if (d.itens && d.itens.length) {
+              d.itens.forEach(it => adicionarItemOrcamento(it));
+            } else {
+              adicionarItemOrcamento();
+            }
+            atualizarTotais();
+          } catch (e) {
+            console.error(e);
+            adicionarItemOrcamento();
           }
-        </style>
-      </head>
-      <body>
-        ${cabecalhoProf}
-        ${corpo}
-        <div class="assinatura">
-          <hr>
-          <div>${cadastroSalvo.nome || ""}</div>
-          <div>
-            ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
-          </div>
-          <div>${cadastroSalvo.conselho || ""}</div>
+        }
+        
+        function limparItensOrcamento() {
+            document.getElementById("orcCorpo").innerHTML = "";
+            adicionarItemOrcamento();
+            atualizarTotais();
+        }
+
+        function limparOrcamento() {
+            document.getElementById("orcPaciente").value = "";
+            document.getElementById("orcValidade").value = "";
+            document.getElementById("orcObs").value = "";
+            limparItensOrcamento();
+            mostrarStatus("statusOrcamento", "Orçamento limpo.");
+        }
+        
+        // --------- GERAR PDF (MUITO IMPORTANTE!) ---------
+        // A função GerarPDF do seu código original é crucial para que os botões funcionem!
+        // (A sua função original foi mantida no script para garantir a funcionalidade)
+        
+        function gerarPDF(secaoId) {
+          const cadastroSalvo = JSON.parse(localStorage.getItem("btx_profissional") || "{}");
+
+          function nl2br(txt) {
+            return (txt || "").replace(/\n/g, "<br>");
+          }
+
+          const cabecalhoProf = `
+            <div style="text-align:center; margin-bottom:16px; font-family:sans-serif;">
+              <div style="font-size:18px; font-weight:bold;">${cadastroSalvo.nome || ""}</div>
+              <div style="font-size:14px;">
+                ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
+              </div>
+              <div style="font-size:13px;">${cadastroSalvo.conselho || ""}</div>
+              <div style="font-size:12px; margin-top:4px;">${cadastroSalvo.endereco || ""}</div>
+              <div style="font-size:12px;">${cadastroSalvo.cidade || ""}</div>
+              <div style="font-size:12px;">${cadastroSalvo.telefone || ""}</div>
+              <hr style="margin-top:12px;">
+            </div>
+          `;
+
+          let corpo = "";
+
+          if (secaoId === "sec-ficha") {
+            const nome = document.getElementById("pacNome").value;
+            const nasc = document.getElementById("pacNascimento").value;
+            const mae = document.getElementById("pacMae").value;
+            const tel = document.getElementById("pacTelefone").value;
+            const end = document.getElementById("pacEndereco").value;
+            const queixa = document.getElementById("pacQueixa").value;
+            const anamnese = document.getElementById("pacAnamnese").value;
+            const proc = document.getElementById("pacProcedimentos").value;
+
+            corpo = `
+              <h2>Ficha Clínica</h2>
+              <p><strong>Paciente:</strong> ${nome || ""}</p>
+              <p><strong>Data de nascimento:</strong> ${nasc || ""}</p>
+              <p><strong>Nome da mãe:</strong> ${mae || ""}</p>
+              <p><strong>Telefone / WhatsApp:</strong> ${tel || ""}</p>
+              <p><strong>Endereço:</strong> ${end || ""}</p>
+              <hr>
+              <p><strong>Queixa principal:</strong><br>${nl2br(queixa)}</p>
+              <p><strong>Anamnese / SOAP:</strong><br>${nl2br(anamnese)}</p>
+              <p><strong>Procedimentos realizados:</strong><br>${nl2br(proc)}</p>
+            `;
+          } else if (secaoId === "sec-receituario") {
+            const salvoRec = JSON.parse(localStorage.getItem("btx_receituario") || "{}");
+            const paciente = document.getElementById("recPaciente").value || salvoRec.paciente || "";
+            const data = document.getElementById("recData").value || salvoRec.data || "";
+            const presc = document.getElementById("recPrescricao").value || salvoRec.prescricao || "";
+            const ori = document.getElementById("recOrientacoes").value || salvoRec.orientacoes || "";
+            const cidade = document.getElementById("recCidade").value || salvoRec.cidade || cadastroSalvo.cidade || "";
+
+            corpo = `
+              <h2>Receituário</h2>
+              <p><strong>Paciente:</strong> ${paciente}</p>
+              <p><strong>Data:</strong> ${data}</p>
+              <hr>
+              <p><strong>Prescrição:</strong><br>${nl2br(presc)}</p>
+              <p><strong>Orientações:</strong><br>${nl2br(ori)}</p>
+              <br>
+              <p>${cidade}</p>
+            `;
+          } else if (secaoId === "sec-atestado") {
+            const salvoAt = JSON.parse(localStorage.getItem("btx_atestado") || "{}");
+            const paciente = document.getElementById("atPaciente").value || salvoAt.paciente || "";
+            const doc = document.getElementById("atDocumento").value || salvoAt.doc || "";
+            const cid = document.getElementById("atCID").value || salvoAt.cid || "";
+            const dias = document.getElementById("atDias").value || salvoAt.dias || "";
+            const data = document.getElementById("atData").value || salvoAt.data || "";
+            const cidade = document.getElementById("atCidade").value || salvoAt.cidade || cadastroSalvo.cidade || "";
+            const obs = document.getElementById("atObs").value || salvoAt.obs || "";
+
+            corpo = `
+              <h2 style="text-align:center; margin-bottom:16px;">Atestado</h2>
+              <p>Certifico, para os devidos fins, que o(a) paciente:</p>
+              <p><strong>Nome:</strong> ${paciente}</p>
+              <p><strong>Documento:</strong> ${doc}</p>
+              ${cid ? `<p><strong>CID:</strong> ${cid}</p>` : ""}
+              <p>necessita de <strong>${dias || "____"}</strong> dia(s) de afastamento das suas atividades habituais.</p>
+              <p><strong>Data:</strong> ${data}</p>
+              <p><strong>Cidade/UF:</strong> ${cidade}</p>
+              ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs)}</p>` : ""}
+            `;
+          } else if (secaoId === "sec-orcamento") {
+            atualizarTotais(); // garante subtotais atualizados
+
+            const salvoOrc = JSON.parse(localStorage.getItem("btx_orcamento") || "{}");
+            const paciente = document.getElementById("orcPaciente").value || salvoOrc.paciente || "";
+            const validade = document.getElementById("orcValidade").value || salvoOrc.validade || "";
+            const obs = document.getElementById("orcObs").value || salvoOrc.obs || "";
+            const total = document.getElementById("orcTotal").textContent || "0,00";
+
+            let linhas = "";
+            document.querySelectorAll(".orc-item-row").forEach((row) => {
+              const desc = row.querySelector(".orc-desc").value;
+              const qtd = row.querySelector(".orc-qtd").value;
+              const valor = row.querySelector(".orc-valor").value;
+              const subtotal = row.querySelector(".orc-subtotal").value;
+              if (desc || valor) {
+                linhas += `
+                  <tr>
+                    <td>${desc || ""}</td>
+                    <td style="text-align:center;">${qtd || ""}</td>
+                    <td style="text-align:right;">${valor || ""}</td>
+                    <td style="text-align:right;">${subtotal || ""}</td>
+                  </tr>
+                `;
+              }
+            });
+
+            corpo = `
+              <h2>Orçamento de Tratamento</h2>
+              <p><strong>Paciente:</strong> ${paciente}</p>
+              <p><strong>Validade:</strong> ${validade}</p>
+              <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                <thead>
+                  <tr>
+                    <th style="border:1px solid #444; padding:4px; text-align:left;">Procedimento</th>
+                    <th style="border:1px solid #444; padding:4px; text-align:center;">Qtd.</th>
+                    <th style="border:1px solid #444; padding:4px; text-align:right;">Valor unitário (R$)</th>
+                    <th style="border:1px solid #444; padding:4px; text-align:right;">Subtotal (R$)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${linhas || `<tr><td colspan="4" style="border:1px solid #444; padding:4px;">Sem itens lançados.</td></tr>`}
+                </tbody>
+              </table>
+              <p style="text-align:right; margin-top:10px;">
+                <strong>Total geral:</strong> R$ ${total}
+              </p>
+              ${obs ? `<p><strong>Observações / Condições de pagamento:</strong><br>${nl2br(obs)}</p>` : ""}
+            `;
+          } else {
+            alert("Seção inválida para gerar PDF.");
+            return;
+          }
+
+          const conteudo = `
+            <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>Documento</title>
+                <style>
+                  body {
+                    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    margin: 24px;
+                    font-size: 13px;
+                  }
+                  h2 {
+                    margin: 0 0 8px 0;
+                  }
+                  p {
+                    margin: 4px 0;
+                  }
+                  table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 8px;
+                  }
+                  th, td {
+                    border: 1px solid #444;
+                    padding: 4px;
+                    font-size: 12px;
+                  }
+                  .assinatura {
+                    margin-top: 40px;
+                    text-align: center;
+                    font-size: 12px;
+                  }
+                  .assinatura hr {
+                    width: 60%;
+                  }
+                </style>
+              </head>
+              <body>
+                ${cabecalhoProf}
+                ${corpo}
+                <div class="assinatura">
+                  <hr>
+                  <div>${cadastroSalvo.nome || ""}</div>
+                  <div>
+                    ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
+                  </div>
+                  <div>${cadastroSalvo.conselho || ""}</div>
+                </div>
+              </body>
+            </html>
+          `;
+
+          const janela = window.open("", "_blank");
+          janela.document.open();
+          janela.document.write(conteudo);
+          janela.document.close();
+          janela.focus();
+          janela.print();
+        }
+
+        // --------- INICIALIZAÇÃO + SERVICE WORKER PWA (Implementação de exemplo reduzida) ---------
+        window.addEventListener("load", () => {
+          carregarCadastro();
+          carregarFicha();
+          carregarReceituario();
+          carregarAtestado();
+          carregarOrcamento();
+
+          // Inicializa a primeira seção
+          trocarSecao('sec-cadastro', document.querySelector('.tab-btn'));
+          
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker
+              .register("sw.js")
+              .catch(err => console.log("SW erro:", err));
+          }
+        });
+
+    </script>
+</head>
+<body>
+
+    <div class="sidebar">
+        <button class="tab-btn active" onclick="trocarSecao('sec-cadastro', this)">👤 Cadastro</button>
+        <button class="tab-btn" onclick="trocarSecao('sec-ficha', this)">📋 Ficha Clínica</button>
+        <button class="tab-btn" onclick="trocarSecao('sec-receituario', this)">💊 Receituário</button>
+        <button class="tab-btn" onclick="trocarSecao('sec-atestado', this)">📝 Atestado</button>
+        <button class="tab-btn" onclick="trocarSecao('sec-orcamento', this)">💰 Orçamento</button>
+    </div>
+
+    <div class="main-content">
+        <div id="sec-cadastro" class="section active">
+            <h2>Dados do Profissional</h2>
+            <div class="form-group"><label for="profNome">Nome completo:</label><input type="text" id="profNome"></div>
+            <div class="form-group"><label for="profProfissao">Profissão:</label><input type="text" id="profProfissao"></div>
+            <div class="form-group"><label for="profEspecialidade">Especialidade (Opcional):</label><input type="text" id="profEspecialidade"></div>
+            <div class="form-group"><label for="profConselho">Conselho/Registro (Ex: CRO/SP 12345):</label><input type="text" id="profConselho"></div>
+            <div class="form-group"><label for="profTelefone">Telefone / WhatsApp:</label><input type="text" id="profTelefone"></div>
+            <div class="form-group"><label for="profEndereco">Endereço (Rua, Número, Bairro):</label><input type="text" id="profEndereco"></div>
+            <div class="form-group"><label for="profCidade">Cidade/UF:</label><input type="text" id="profCidade"></div>
+            
+            <hr>
+            <h3>Acesso e Segurança (Opcional)</h3>
+            <p style="font-size: 12px; color: #7f8c8d;">Estes dados não são impressos.</p>
+            <div class="form-group"><label for="profLogin">Login:</label><input type="text" id="profLogin"></div>
+            <div class="form-group"><label for="profSenha">Senha:</label><input type="password" id="profSenha"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="salvarCadastro()">💾 Salvar Cadastro</button>
+                <button class="btn btn-secondary" onclick="carregarCadastro()">🔄 Carregar Salvo</button>
+                <button class="btn btn-danger" onclick="limparCadastro()">🧹 Limpar Campos</button>
+            </div>
+            <div id="statusCadastro" class="status-msg"></div>
         </div>
-      </body>
-    </html>
-  `;
+        
+        <div id="sec-ficha" class="section">
+            <h2>Ficha Clínica</h2>
+            <h3>Dados do Paciente</h3>
+            <div class="form-group"><label for="pacNome">Nome completo:</label><input type="text" id="pacNome"></div>
+            <div class="form-group"><label for="pacNascimento">Data de Nascimento:</label><input type="date" id="pacNascimento"></div>
+            <div class="form-group"><label for="pacMae">Nome da Mãe:</label><input type="text" id="pacMae"></div>
+            <div class="form-group"><label for="pacTelefone">Telefone / WhatsApp:</label><input type="text" id="pacTelefone"></div>
+            <div class="form-group"><label for="pacEndereco">Endereço:</label><input type="text" id="pacEndereco"></div>
+            
+            <h3>Anamnese e Procedimentos</h3>
+            <div class="form-group"><label for="pacQueixa">Queixa Principal:</label><textarea id="pacQueixa"></textarea></div>
+            <div class="form-group"><label for="pacAnamnese">Histórico / Anamnese / Evolução (SOAP):</label><textarea id="pacAnamnese"></textarea></div>
+            <div class="form-group"><label for="pacProcedimentos">Procedimentos Realizados / Próxima Consulta:</label><textarea id="pacProcedimentos"></textarea></div>
 
-  const janela = window.open("", "_blank");
-  janela.document.open();
-  janela.document.write(conteudo);
-  janela.document.close();
-  janela.focus();
-  janela.print();
-}
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="salvarFicha()">💾 Salvar Ficha</button>
+                <button class="btn btn-secondary" onclick="carregarFicha()">🔄 Carregar Salva</button>
+                <button class="btn btn-danger" onclick="limparFicha()">🧹 Limpar Campos</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-ficha')">🖨️ Gerar PDF / Imprimir</button>
+            </div>
+            <div id="statusFicha" class="status-msg"></div>
+        </div>
 
-// --------- INICIALIZAÇÃO + SERVICE WORKER PWA ---------
-window.addEventListener("load", () => {
-  carregarCadastro();
-  carregarFicha();
-  carregarReceituario();
-  carregarAtestado();
-  carregarOrcamento();
+        <div id="sec-receituario" class="section">
+            <h2>Receituário</h2>
+            <div class="form-group"><label for="recPaciente">Paciente:</label><input type="text" id="recPaciente"></div>
+            <div class="form-group"><label for="recData">Data:</label><input type="date" id="recData"></div>
+            
+            <div class="rec-sugestoes">
+                <p style="font-weight: bold; margin-bottom: 5px;">Sugestões rápidas:</p>
+                <button onclick="addMedicamento('Dipirona 500mg (Comprimidos)')">Dipirona</button>
+                <button onclick="addMedicamento('Amoxicilina 500mg (Cápsulas)')">Amoxicilina</button>
+                <button onclick="addMedicamento('Ibuprofeno 600mg (Cápsulas)')">Ibuprofeno</button>
+                <button onclick="addMedicamento('Paracetamol 750mg (Comprimidos)')">Paracetamol</button>
+            </div>
+            
+            <div class="form-group"><label for="recPrescricao">Prescrição (1 por linha):</label><textarea id="recPrescricao"></textarea></div>
+            <div class="form-group"><label for="recOrientacoes">Orientações Adicionais:</label><textarea id="recOrientacoes"></textarea></div>
+            <div class="form-group"><label for="recCidade">Cidade (Local da Prescrição):</label><input type="text" id="recCidade"></div>
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("sw.js")
-      .catch(err => console.log("SW erro:", err));
-  }
-});
-</script>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="salvarReceituario()">💾 Salvar Receituário</button>
+                <button class="btn btn-secondary" onclick="carregarReceituario()">🔄 Carregar Salvo</button>
+                <button class="btn btn-danger" onclick="limparReceituario()">🧹 Limpar Campos</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-receituario')">🖨️ Gerar PDF / Imprimir</button>
+            </div>
+            <div id="statusReceituario" class="status-msg"></div>
+        </div>
+
+        <div id="sec-atestado" class="section">
+            <h2>Atestado Médico/Clínico</h2>
+            <div class="form-group"><label for="atPaciente">Paciente:</label><input type="text" id="atPaciente"></div>
+            <div class="form-group"><label for="atDocumento">Documento (RG/CPF):</label><input type="text" id="atDocumento"></div>
+            <div class="form-group"><label for="atCID">CID (Opcional):</label><input type="text" id="atCID"></div>
+            <hr>
+            <div class="form-group"><label for="atDias">Número de Dias de Afastamento:</label><input type="number" id="atDias" min="1"></div>
+            <div class="form-group"><label for="atObs">Observações Adicionais:</label><textarea id="atObs"></textarea></div>
+            <hr>
+            <div class="form-group"><label for="atData">Data do Atestado:</label><input type="date" id="atData"></div>
+            <div class="form-group"><label for="atCidade">Cidade (Local do Atestado):</label><input type="text" id="atCidade"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="salvarAtestado()">💾 Salvar Atestado</button>
+                <button class="btn btn-secondary" onclick="carregarAtestado()">🔄 Carregar Salvo</button>
+                <button class="btn btn-danger" onclick="limparAtestado()">🧹 Limpar Campos</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-atestado')">🖨️ Gerar PDF / Imprimir</button>
+            </div>
+            <div id="statusAtestado" class="status-msg"></div>
+        </div>
+
+        <div id="sec-orcamento" class="section">
+            <h2>Orçamento de Tratamento</h2>
+            <div class="form-group"><label for="orcPaciente">Paciente:</label><input type="text" id="orcPaciente"></div>
+            <div class="form-group"><label for="orcValidade">Validade da Proposta:</label><input type="text" id="orcValidade" placeholder="Ex: 30 dias"></div>
+            
+            <table class="orc-table">
+                <thead>
+                    <tr>
+                        <th>Procedimento</th>
+                        <th style="width: 60px; text-align: center;">Qtd.</th>
+                        <th style="width: 100px; text-align: right;">Valor Unit. (R$)</th>
+                        <th style="width: 100px; text-align: right;">Subtotal (R$)</th>
+                    </tr>
+                </thead>
+                <tbody id="orcCorpo">
+                    </tbody>
+            </table>
+            
+            <div class="orc-actions">
+                <button class="btn btn-secondary" onclick="adicionarItemOrcamento()">➕ Adicionar Item</button>
+                <button class="btn btn-danger" onclick="limparItensOrcamento()">✖️ Limpar Itens</button>
+            </div>
+            
+            <div class="total-box">
+                Total Geral: R$ <span id="orcTotal">0,00</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;"><label for="orcObs">Observações / Condições de Pagamento:</label><textarea id="orcObs"></textarea></div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="salvarOrcamento()">💾 Salvar Orçamento</button>
+                <button class="btn btn-secondary" onclick="carregarOrcamento()">🔄 Carregar Salvo</button>
+                <button class="btn btn-danger" onclick="limparOrcamento()">🧹 Limpar Tudo</button>
+                <button class="btn btn-primary" onclick="gerarPDF('sec-orcamento')">🖨️ Gerar PDF / Imprimir</button>
+            </div>
+            <div id="statusOrcamento" class="status-msg"></div>
+        </div>
+    </div>
+
+</body>
+</html>
