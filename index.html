@@ -264,8 +264,6 @@
         }
     </style>
     <script>
-        // O CÓDIGO JAVASCRIPT QUE VOCÊ ME ENVIOU DEVE SER INSERIDO AQUI
-        // (Para simplificar, não o repeti, mas ele deve estar aqui)
         
         // --------- UTILIDADES GERAIS ---------
         function mostrarStatus(id, msg) {
@@ -290,7 +288,7 @@
           if (botao) botao.classList.add("active");
         }
 
-        // --------- CADASTRO (Implementação de exemplo reduzida) ---------
+        // --------- CADASTRO ---------
         function salvarCadastro() {
              const dados = {
                 nome: document.getElementById("profNome").value || "",
@@ -331,7 +329,7 @@
               mostrarStatus("statusCadastro", "Cadastro limpo (não esqueça de salvar novamente).");
         }
         
-        // --------- FICHA CLÍNICA (Implementação de exemplo reduzida) ---------
+        // --------- FICHA CLÍNICA ---------
         function salvarFicha() {
              const f = {
                 nome: document.getElementById("pacNome").value || "",
@@ -370,7 +368,7 @@
               mostrarStatus("statusFicha", "Ficha clínica limpa.");
         }
         
-        // --------- RECEITUÁRIO (Implementação de exemplo reduzida) ---------
+        // --------- RECEITUÁRIO ---------
         function addMedicamento(txt) {
             const campo = document.getElementById("recPrescricao");
             if (!campo.value) {
@@ -411,7 +409,7 @@
               mostrarStatus("statusReceituario", "Receituário limpo.");
         }
         
-        // --------- ATESTADO (Implementação de exemplo reduzida) ---------
+        // --------- ATESTADO ---------
         function salvarAtestado() {
              const a = {
                 paciente: document.getElementById("atPaciente").value || "",
@@ -447,7 +445,7 @@
               mostrarStatus("statusAtestado", "Atestado limpo.");
         }
         
-        // --------- ORÇAMENTO (Implementação de exemplo reduzida) ---------
+        // --------- ORÇAMENTO ---------
         function adicionarItemOrcamento(item = {}) {
           const corpo = document.getElementById("orcCorpo");
           const tr = document.createElement("tr");
@@ -538,10 +536,9 @@
             mostrarStatus("statusOrcamento", "Orçamento limpo.");
         }
         
-        // --------- GERAR PDF (MUITO IMPORTANTE!) ---------
-        // A função GerarPDF do seu código original é crucial para que os botões funcionem!
-        // (A sua função original foi mantida no script para garantir a funcionalidade)
-        
+        // ----------------------------------------------------
+        // --------- FUNÇÃO GERAR PDF (CORRIGIDA) -------------
+        // ----------------------------------------------------
         function gerarPDF(secaoId) {
           const cadastroSalvo = JSON.parse(localStorage.getItem("btx_profissional") || "{}");
 
@@ -566,6 +563,7 @@
           let corpo = "";
 
           if (secaoId === "sec-ficha") {
+            // Ficha Clínica já estava lendo direto da tela, mas foi mantida
             const nome = document.getElementById("pacNome").value;
             const nasc = document.getElementById("pacNascimento").value;
             const mae = document.getElementById("pacMae").value;
@@ -588,47 +586,54 @@
               <p><strong>Procedimentos realizados:</strong><br>${nl2br(proc)}</p>
             `;
           } else if (secaoId === "sec-receituario") {
-            const salvoRec = JSON.parse(localStorage.getItem("btx_receituario") || "{}");
-            const paciente = document.getElementById("recPaciente").value || salvoRec.paciente || "";
-            const data = document.getElementById("recData").value || salvoRec.data || "";
-            const presc = document.getElementById("recPrescricao").value || salvoRec.prescricao || "";
-            const ori = document.getElementById("recOrientacoes").value || salvoRec.orientacoes || "";
+            // CORRIGIDO: Força a leitura do valor atual do campo 'recPaciente'
+            const salvoRec = JSON.parse(localStorage.getItem("btx_receituario") || "{}"); 
+            const paciente = document.getElementById("recPaciente").value;
+            const data = document.getElementById("recData").value;
+            const presc = document.getElementById("recPrescricao").value;
+            const ori = document.getElementById("recOrientacoes").value;
+            
+            // A cidade e outros campos ainda usam o salvo como fallback, se os campos estiverem vazios
             const cidade = document.getElementById("recCidade").value || salvoRec.cidade || cadastroSalvo.cidade || "";
 
             corpo = `
               <h2>Receituário</h2>
-              <p><strong>Paciente:</strong> ${paciente}</p>
-              <p><strong>Data:</strong> ${data}</p>
+              <p><strong>Paciente:</strong> ${paciente || ""}</p>
+              <p><strong>Data:</strong> ${data || ""}</p>
               <hr>
-              <p><strong>Prescrição:</strong><br>${nl2br(presc)}</p>
-              <p><strong>Orientações:</strong><br>${nl2br(ori)}</p>
+              <p><strong>Prescrição:</strong><br>${nl2br(presc || "")}</p>
+              <p><strong>Orientações:</strong><br>${nl2br(ori || "")}</p>
               <br>
               <p>${cidade}</p>
             `;
           } else if (secaoId === "sec-atestado") {
+            // CORRIGIDO: Força a leitura dos campos de paciente e dados do atestado
             const salvoAt = JSON.parse(localStorage.getItem("btx_atestado") || "{}");
-            const paciente = document.getElementById("atPaciente").value || salvoAt.paciente || "";
-            const doc = document.getElementById("atDocumento").value || salvoAt.doc || "";
-            const cid = document.getElementById("atCID").value || salvoAt.cid || "";
-            const dias = document.getElementById("atDias").value || salvoAt.dias || "";
-            const data = document.getElementById("atData").value || salvoAt.data || "";
+            const paciente = document.getElementById("atPaciente").value;
+            const doc = document.getElementById("atDocumento").value;
+            const cid = document.getElementById("atCID").value;
+            const dias = document.getElementById("atDias").value;
+            const data = document.getElementById("atData").value;
+            const obs = document.getElementById("atObs").value;
+            
+            // A cidade ainda usa o salvo como fallback
             const cidade = document.getElementById("atCidade").value || salvoAt.cidade || cadastroSalvo.cidade || "";
-            const obs = document.getElementById("atObs").value || salvoAt.obs || "";
 
             corpo = `
               <h2 style="text-align:center; margin-bottom:16px;">Atestado</h2>
               <p>Certifico, para os devidos fins, que o(a) paciente:</p>
-              <p><strong>Nome:</strong> ${paciente}</p>
-              <p><strong>Documento:</strong> ${doc}</p>
+              <p><strong>Nome:</strong> ${paciente || ""}</p>
+              <p><strong>Documento:</strong> ${doc || ""}</p>
               ${cid ? `<p><strong>CID:</strong> ${cid}</p>` : ""}
               <p>necessita de <strong>${dias || "____"}</strong> dia(s) de afastamento das suas atividades habituais.</p>
-              <p><strong>Data:</strong> ${data}</p>
+              <p><strong>Data:</strong> ${data || ""}</p>
               <p><strong>Cidade/UF:</strong> ${cidade}</p>
-              ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs)}</p>` : ""}
+              ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs || "")}</p>` : ""}
             `;
           } else if (secaoId === "sec-orcamento") {
             atualizarTotais(); // garante subtotais atualizados
 
+            // Orçamento já estava lendo direto da tela, mas foi mantido
             const salvoOrc = JSON.parse(localStorage.getItem("btx_orcamento") || "{}");
             const paciente = document.getElementById("orcPaciente").value || salvoOrc.paciente || "";
             const validade = document.getElementById("orcValidade").value || salvoOrc.validade || "";
