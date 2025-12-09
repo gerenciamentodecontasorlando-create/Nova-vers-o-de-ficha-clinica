@@ -885,20 +885,20 @@
       document.getElementById("orcObs").value = "";
       limparItensOrcamento();
       mostrarStatus("statusOrcamento", "Orçamento limpo.");
-    }
-
-    // --------- GERAR PDF (USANDO PRINT) ---------
+    // --------- GERAR PDF (AGORA LEVA OS VALORES) ---------
     function gerarPDF(secaoId) {
-      const secao = document.getElementById(secaoId);
-      if (!secao) return;
-
       const cadastroSalvo = JSON.parse(localStorage.getItem("btx_profissional") || "{}");
 
-      // Monta cabeçalho com dados do profissional
+      function nl2br(txt) {
+        return (txt || "").replace(/\n/g, "<br>");
+      }
+
       const cabecalhoProf = `
         <div style="text-align:center; margin-bottom:16px; font-family:sans-serif;">
           <div style="font-size:18px; font-weight:bold;">${cadastroSalvo.nome || ""}</div>
-          <div style="font-size:14px;">${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}</div>
+          <div style="font-size:14px;">
+            ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
+          </div>
           <div style="font-size:13px;">${cadastroSalvo.conselho || ""}</div>
           <div style="font-size:12px; margin-top:4px;">${cadastroSalvo.endereco || ""}</div>
           <div style="font-size:12px;">${cadastroSalvo.cidade || ""}</div>
@@ -907,27 +907,134 @@
         </div>
       `;
 
+      let corpo = "";
+
+      if (secaoId === "sec-ficha") {
+        const nome = document.getElementById("pacNome").value;
+        const nasc = document.getElementById("pacNascimento").value;
+        const mae = document.getElementById("pacMae").value;
+        const tel = document.getElementById("pacTelefone").value;
+        const end = document.getElementById("pacEndereco").value;
+        const queixa = document.getElementById("pacQueixa").value;
+        const anamnese = document.getElementById("pacAnamnese").value;
+        const proc = document.getElementById("pacProcedimentos").value;
+
+        corpo = `
+          <h2>Ficha Clínica</h2>
+          <p><strong>Paciente:</strong> ${nome || ""}</p>
+          <p><strong>Data de nascimento:</strong> ${nasc || ""}</p>
+          <p><strong>Nome da mãe:</strong> ${mae || ""}</p>
+          <p><strong>Telefone / WhatsApp:</strong> ${tel || ""}</p>
+          <p><strong>Endereço:</strong> ${end || ""}</p>
+          <hr>
+          <p><strong>Queixa principal:</strong><br>${nl2br(queixa)}</p>
+          <p><strong>Anamnese / SOAP:</strong><br>${nl2br(anamnese)}</p>
+          <p><strong>Procedimentos realizados:</strong><br>${nl2br(proc)}</p>
+        `;
+      } else if (secaoId === "sec-receituario") {
+        const paciente = document.getElementById("recPaciente").value;
+        const data = document.getElementById("recData").value;
+        const presc = document.getElementById("recPrescricao").value;
+        const ori = document.getElementById("recOrientacoes").value;
+        const cidade = document.getElementById("recCidade").value || cadastroSalvo.cidade || "";
+
+        corpo = `
+          <h2>Receituário</h2>
+          <p><strong>Paciente:</strong> ${paciente || ""}</p>
+          <p><strong>Data:</strong> ${data || ""}</p>
+          <hr>
+          <p><strong>Prescrição:</strong><br>${nl2br(presc)}</p>
+          <p><strong>Orientações:</strong><br>${nl2br(ori)}</p>
+          <br>
+          <p>${cidade}</p>
+        `;
+      } else if (secaoId === "sec-atestado") {
+        const paciente = document.getElementById("atPaciente").value;
+        const doc = document.getElementById("atDocumento").value;
+        const cid = document.getElementById("atCID").value;
+        const dias = document.getElementById("atDias").value;
+        const data = document.getElementById("atData").value;
+        const cidade = document.getElementById("atCidade").value || cadastroSalvo.cidade || "";
+        const obs = document.getElementById("atObs").value;
+
+        corpo = `
+          <h2 style="text-align:center; margin-bottom:16px;">Atestado</h2>
+          <p>Certifico, para os devidos fins, que o(a) paciente:</p>
+          <p><strong>Nome:</strong> ${paciente || ""}</p>
+          <p><strong>Documento:</strong> ${doc || ""}</p>
+          ${cid ? `<p><strong>CID:</strong> ${cid}</p>` : ""}
+          <p>necessita de <strong>${dias || "____"}</strong> dia(s) de afastamento das suas atividades habituais.</p>
+          <p><strong>Data:</strong> ${data || ""}</p>
+          <p><strong>Cidade/UF:</strong> ${cidade}</p>
+          ${obs ? `<p><strong>Observações:</strong><br>${nl2br(obs)}</p>` : ""}
+        `;
+      } else if (secaoId === "sec-orcamento") {
+        const paciente = document.getElementById("orcPaciente").value;
+        const validade = document.getElementById("orcValidade").value;
+        const obs = document.getElementById("orcObs").value;
+        const total = document.getElementById("orcTotal").textContent || "0,00";
+
+        let linhas = "";
+        document.querySelectorAll(".orc-item-row").forEach((row) => {
+          const desc = row.querySelector(".orc-desc").value;
+          const qtd = row.querySelector(".orc-qtd").value;
+          const valor = row.querySelector(".orc-valor").value;
+          const subtotal = row.querySelector(".orc-subtotal").value;
+          if (desc || valor) {
+            linhas += `
+              <tr>
+                <td>${desc || ""}</td>
+                <td style="text-align:center;">${qtd || ""}</td>
+                <td style="text-align:right;">${valor || ""}</td>
+                <td style="text-align:right;">${subtotal || ""}</td>
+              </tr>
+            `;
+          }
+        });
+
+        corpo = `
+          <h2>Orçamento de Tratamento</h2>
+          <p><strong>Paciente:</strong> ${paciente || ""}</p>
+          <p><strong>Validade:</strong> ${validade || ""}</p>
+          <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #444; padding:4px; text-align:left;">Procedimento</th>
+                <th style="border:1px solid #444; padding:4px; text-align:center;">Qtd.</th>
+                <th style="border:1px solid #444; padding:4px; text-align:right;">Valor unitário (R$)</th>
+                <th style="border:1px solid #444; padding:4px; text-align:right;">Subtotal (R$)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhas || `<tr><td colspan="4" style="border:1px solid #444; padding:4px;">Sem itens lançados.</td></tr>`}
+            </tbody>
+          </table>
+          <p style="text-align:right; margin-top:10px;">
+            <strong>Total geral:</strong> R$ ${total}
+          </p>
+          ${obs ? `<p><strong>Observações / Condições de pagamento:</strong><br>${nl2br(obs)}</p>` : ""}
+        `;
+      } else {
+        alert("Seção inválida para gerar PDF.");
+        return;
+      }
+
       const conteudo = `
         <html>
           <head>
             <meta charset="UTF-8">
-            <title>PDF</title>
+            <title>Documento</title>
             <style>
               body {
                 font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 margin: 24px;
                 font-size: 13px;
               }
-              h2, h3 {
+              h2 {
                 margin: 0 0 8px 0;
               }
-              label {
-                font-weight: 600;
-                font-size: 12px;
-              }
-              input, textarea {
-                width: 100%;
-                font-size: 13px;
+              p {
+                margin: 4px 0;
               }
               table {
                 width: 100%;
@@ -951,11 +1058,13 @@
           </head>
           <body>
             ${cabecalhoProf}
-            ${secao.innerHTML}
+            ${corpo}
             <div class="assinatura">
               <hr>
               <div>${cadastroSalvo.nome || ""}</div>
-              <div>${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}</div>
+              <div>
+                ${cadastroSalvo.profissao || ""}${cadastroSalvo.especialidade ? " - " + cadastroSalvo.especialidade : ""}
+              </div>
               <div>${cadastroSalvo.conselho || ""}</div>
             </div>
           </body>
@@ -967,7 +1076,7 @@
       janela.document.write(conteudo);
       janela.document.close();
       janela.focus();
-      janela.print(); // Aqui o usuário escolhe "Salvar como PDF"
+      janela.print();
     }
 
     // --------- INICIALIZAÇÃO + SERVICE WORKER PWA ---------
